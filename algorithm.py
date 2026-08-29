@@ -24,7 +24,21 @@ def validate_header(header: list[str]) -> None:
         None: Ничего не возвращает. При неправильном формате
         заголовка вызывает исключение.
     """
-    pass
+    # Проверка количества колонок
+    if len(header) != len(EXPECTED_HEADER):
+        logger.error(
+            f"Неверный формат заголовка: ожидается {len(EXPECTED_HEADER)} колонок, "
+            f"получено {len(header)}: {header}"
+        )
+        raise ValueError("Неверный формат заголовка входного TSV.")
+
+    # Проверка соответствия названий колонок
+    if header != EXPECTED_HEADER:
+        logger.error(
+            f"Неверный формат заголовка: ожидается {EXPECTED_HEADER}, "
+            f"получено {header}"
+        )
+        raise ValueError("Неверный формат заголовка входного TSV.")
 
 
 def validate_snp_row(
