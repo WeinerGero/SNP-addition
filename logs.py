@@ -101,7 +101,7 @@ def run_with_logging(func, *args, **kwargs):
     report_content_lines.append("")
 
     try:
-        result = func(*args, **kwargs, logger=logger)
+        result = func(*args, **kwargs)
         report_content_lines.append("Статус: Успешно")
         report_content_lines.append(f"Результат (repr): {repr(result)}")
     except Exception as e:
@@ -117,7 +117,7 @@ def run_with_logging(func, *args, **kwargs):
         # чистит старые папки
         cleanup_old_folders()
 
-        logger.info("Логирование завершено, отчёт сохранён, старые папки очищены.")
+        logger.info("Логирование завершено, отчёт сохранён")
 
     return result
 
@@ -128,20 +128,26 @@ def with_logging(func):
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
-        from logs import run_with_logging
-        # run_with_logging ожидает функцию, которая принимает logger как именованный аргумент
-        def wrapped_func(logger):
-            return func(*args, logger=logger, **kwargs)
-        return run_with_logging(wrapped_func)
+        return run_with_logging(func, *args, **kwargs)
     return wrapper
+
+
+def get_logger() -> logging.Logger:
+    """Возвращает активный логгер 'my_app'."""
+    return logging.getLogger("my_app")
 
 
 if __name__ == "__main__":
     # пример использования
-    def example_function(x, y, logger: Optional[logging.Logger] = None):
-        if logger:
-            logger.info(f"Выполняется example_function с аргументами: x={x}, y={y}")
-        return x + y
+    from logs import with_logging, get_logger
 
-    result = run_with_logging(example_function, 5, 10)
-    print(f"Результат: {result}")
+    @with_logging
+    def simple_task() -> int:
+        logger = get_logger()
+        logger.info("Старт задачи")
+        result = 42 * 2
+        logger.info(f"Промежуточный результат: {result}")
+        return result
+
+    output = simple_task()
+    print(f"Готово. Результат: {output}")
