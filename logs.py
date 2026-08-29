@@ -37,6 +37,7 @@ def setup_logging(log_dir: Path) -> logging.Logger:
 
     return logger
 
+
 def create_run_folder() -> Path:
     """Создаёт папку для текущего запуска и возвращает её путь."""
     base_path = Path(BASE_LOG_DIR)
@@ -55,9 +56,30 @@ def write_report(report_path: Path, content: str) -> None:
         f.write(content)
 
 
-def cleanup_old_folders():
+def cleanup_old_folders() -> None:
     """Оставляет только последние MAX_FOLDERS папок в BASE_LOG_DIR."""
-    pass
+    base_path = Path(BASE_LOG_DIR)
+    if not base_path.is_dir():
+        return
+
+    # сортирует папки по имени
+    folders = sorted(
+        [f for f in base_path.iterdir() if f.is_dir()],
+        key=lambda x: x.name,
+        reverse=True,  # самые свежие первыми
+    )
+
+    to_remove = folders[MAX_FOLDERS:]
+    for folder in to_remove:
+        # удаляет всё внутри и саму папку
+        for item in folder.iterdir():
+            if item.is_file():
+                item.unlink()
+            elif item.is_dir():
+                import shutil
+                shutil.rmtree(item)
+        folder.rmdir()
+
 
 
 def run_with_logging(func, *args, **kwargs):
