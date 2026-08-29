@@ -221,3 +221,6 @@ __marimo__/
 # Fasta files
 *.fa
 *.fai
+
+# Logs
+logs/*/report.txt

@@ -6,6 +6,7 @@ import datetime
 import logging
 from pathlib import Path
 from typing import Optional
+from functools import wraps
 
 BASE_LOG_DIR = "logs"
 MAX_FOLDERS = 10
@@ -119,6 +120,20 @@ def run_with_logging(func, *args, **kwargs):
         logger.info("Логирование завершено, отчёт сохранён, старые папки очищены.")
 
     return result
+
+
+def with_logging(func):
+    """
+    Декоратор для функций, которые должны выполняться с логированием.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        from logs import run_with_logging
+        # run_with_logging ожидает функцию, которая принимает logger как именованный аргумент
+        def wrapped_func(logger):
+            return func(*args, logger=logger, **kwargs)
+        return run_with_logging(wrapped_func)
+    return wrapper
 
 
 if __name__ == "__main__":
