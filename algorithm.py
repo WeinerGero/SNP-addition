@@ -115,7 +115,20 @@ def determine_ref_alt(
         tuple[str, str] | None: Кортеж (REF, ALT) или None
         если невозможно определить SNP.
     """
-    pass
+    # Если референсный нуклеотид не является валидным, возвращаем None
+    if reference_base.upper() not in VALID_BASES:
+            return None
+
+    # Если референс совпадает с первым аллелем, возвращаем как есть
+    if reference_base.lower() == allele1.lower():
+        return reference_base.upper(), allele2.upper()
+
+    # Если референс совпадает со вторым аллелем, меняем местами
+    if reference_base.lower() == allele2.lower():
+        return allele2.upper(), allele1.upper()
+
+    # Если ни один аллель не совпадает с референсом, возвращаем None
+    return None
 
 
 def process_snp(
