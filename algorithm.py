@@ -60,7 +60,7 @@ def get_reference_path(
     Returns:
         Path: Путь к FASTA-файлу выбранной хромосомы.
     """
-    pass
+    return reference_dir / f"{chrom}.fa"
 
 
 def open_reference(
@@ -75,12 +75,11 @@ def open_reference(
     Returns:
         pysam.Fastafile: Открытый объект референсного FASTA-файла.
     """
-    pass
+    return pysam.FastaFile(reference_path)
 
 
 def fetch_reference_base(
     fasta: pysam.Fastafile,
-    chrom: str,
     pos: int,
 ) -> str:
     """
@@ -88,14 +87,13 @@ def fetch_reference_base(
 
     Args:
         fasta (pysam.Fastafile): Открытый референсный FASTA-файл.
-        chrom (str): Название хромосомы.
         pos (int): Позиция SNP в координатах 1-based.
 
     Returns:
         str: Один символ референсного нуклеотида
         в верхнем регистре.
     """
-    pass
+    return pysam.fetch(fasta, pos-1, pos).strip()
 
 
 def determine_ref_alt(
@@ -151,6 +149,16 @@ def process_snp(
         object: Результат обработки SNP с номером исходной строки
         и информацией о распознанном или нераспознанном варианте.
     """
+    #
+    chr = row[0].strip()
+    pos = int(row[1].strip())
+    allele1 = row[-2].strip()
+    allele2 = row[-1].strip()
+
+
+
+    reference_base = pysam.fetch
+
     pass
 
 
