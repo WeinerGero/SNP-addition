@@ -11,6 +11,7 @@ logger = get_logger()
 
 EXPECTED_HEADER = ["#CHROM", "POS", "ID", "allele1", "allele2"]
 VALID_BASES = {"A", "C", "G", "T"}
+REFERENCE_DIR = Path("/ref/GRCh38.d1.vd1_mainChr/sepChrs/")
 
 
 def validate_header(header: list[str]) -> None:
@@ -184,9 +185,8 @@ def determine_ref_alt(
 def process_snp(
     line_number: int,
     row: list[str],
-    reference_dir: Path,
     fasta_cache: dict[str, pysam.Fastafile],
-):
+) -> tuple[int, dict] | None:
     """
     Обрабатывает одну строку SNP и определяет REF и ALT.
 
@@ -198,20 +198,73 @@ def process_snp(
         открытых FASTA-файлов текущего процесса.
 
     Returns:
-        object: Результат обработки SNP с номером исходной строки
-        и информацией о распознанном или нераспознанном варианте.
+        tuple[int, dict] | None: Кортеж из номера строки и словаря с информацией
+        о распознанном или нераспознанном варианте,
+        или None, если это заголовок.
     """
-    #
-    chr = row[0].strip()
-    pos = int(row[1].strip())
-    allele1 = row[-2].strip()
-    allele2 = row[-1].strip()
+    # Если это заголовок, проверяем его и возвращаем None
+    if line_number == 1:
+        validate_header(row)
+        return None  # Заголовок не обрабатываем дальше
+    else:
+        # Если это не заголовок, проверяем строку SNP
+        validated_row = validate_snp_row(row, line_number)
 
+    # Если строка не прошла валидацию, возвращаем номер строки для пропуска
+    if validated_row is None:
+        return line_number, {
+            "status": "unrecognized",
+            "row": row,
+            "reference_base": None,
+            "reason": "Ошибка валидации строки",
+        }
 
+    # Открываем референсный FASTA-файл для нужной хромосомы,
+    # если он ещё не открыт
+    chrom = validated_row[0]
+    reference_fasta = open_reference(REFERENCE_DIR / f"{chrom}.fa")
 
-    reference_base = pysam.fetch
+    # Получаем референсный нуклеотид для позиции SNP
+    pos = validated_row[1]
+    reference_base = fetch_reference_base(
+        reference_fasta,
+        pos
+    )
 
-    pass
+    close_references(fasta_cache)
+
+    # Определяем REF и ALT для SNP
+    allele1 = validated_row[3]
+    allele2 = validated_row[4]
+    ref_alt = determine_ref_alt(
+        reference_base,
+        allele1,
+        allele2
+    )
+
+    # Если невозможно определить REF и ALT,
+    # логируем предупреждение и возвращаем информацию о нераспознанном варианте
+    if ref_alt is None:
+        logger.warning(
+            f"Строка {line_number}: Невозможно определить REF и ALT для SNP, "
+            f"референс: {reference_base}, аллели: {allele1}, {allele2}"
+        )
+        return line_number, {
+            "status": "unrecognized",
+            "row": row,
+            "reference_base": reference_base,
+            "reason": "Невозможно определить REF и ALT",
+        }
+
+    allele1 = ref_alt[0]
+    allele2 = ref_alt[1]
+
+    return line_number, {
+        "status": "recognized",
+        "row": [chrom, pos, validated_row[2], allele1, allele2],
+        "reference_base": reference_base,
+        "reason": None,
+    }
 
 
 def process_chunk(
