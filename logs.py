@@ -123,4 +123,10 @@ def run_with_logging(func, *args, **kwargs):
 
 if __name__ == "__main__":
     # пример использования
-    pass
+    def example_function(x, y, logger: Optional[logging.Logger] = None):
+        if logger:
+            logger.info(f"Выполняется example_function с аргументами: x={x}, y={y}")
+        return x + y
+
+    result = run_with_logging(example_function, 5, 10)
+    print(f"Результат: {result}")
