@@ -37,9 +37,16 @@ def setup_logging(log_dir: Path) -> logging.Logger:
 
     return logger
 
-def create_run_folder():
+def create_run_folder() -> Path:
     """Создаёт папку для текущего запуска и возвращает её путь."""
-    pass
+    base_path = Path(BASE_LOG_DIR)
+    os.makedirs(base_path, exist_ok=True)
+
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    run_dir = base_path / timestamp
+    os.makedirs(run_dir, exist_ok=True)
+
+    return run_dir
 
 
 def write_report(report_path: Path, content: str) -> None:
