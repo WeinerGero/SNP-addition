@@ -5,7 +5,6 @@ import os
 import datetime
 import logging
 from pathlib import Path
-from typing import Optional
 from functools import wraps
 
 BASE_LOG_DIR = "logs"
