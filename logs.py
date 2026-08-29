@@ -81,7 +81,6 @@ def cleanup_old_folders() -> None:
         folder.rmdir()
 
 
-
 def run_with_logging(func, *args, **kwargs):
     """
     Запускает функцию func(*args, **kwargs) в контексте логирования:
@@ -91,7 +90,35 @@ def run_with_logging(func, *args, **kwargs):
       - в конце чистит старые папки
     Возвращает результат func.
     """
-    pass
+    run_dir = create_run_folder()
+    logger = setup_logging(run_dir)
+
+    report_content_lines = []
+    report_content_lines.append("Отчёт о выполнении запуска")
+    report_content_lines.append(f"Папка: {run_dir.resolve()}")
+    report_content_lines.append(f"Дата/время запуска: {datetime.datetime.now().isoformat()}")
+    report_content_lines.append("")
+
+    try:
+        result = func(*args, **kwargs, logger=logger)
+        report_content_lines.append("Статус: Успешно")
+        report_content_lines.append(f"Результат (repr): {repr(result)}")
+    except Exception as e:
+        report_content_lines.append("Статус: Ошибка")
+        report_content_lines.append(f"Исключение: {type(e).__name__}: {e}")
+        logger.exception("Необработанное исключение в основной функции")
+        raise
+    finally:
+        # формирует и пишет отчёт
+        report_path = run_dir / "report.txt"
+        write_report(report_path, "\n".join(report_content_lines))
+
+        # чистит старые папки
+        cleanup_old_folders()
+
+        logger.info("Логирование завершено, отчёт сохранён, старые папки очищены.")
+
+    return result
 
 
 if __name__ == "__main__":
