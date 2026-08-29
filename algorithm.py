@@ -74,28 +74,28 @@ def validate_snp_row(
             )
             return None
 
-    row[0] = row[0].strip()  # CHROM
+    chrom = row[0].strip()  # CHROM
     try:
-        row[1] = int(row[1].strip())  # POS
+        pos = int(row[1].strip())
     except ValueError:
         logger.error(
             f"Строка {line_number}: Позиция POS должна быть целым числом, "
             f"получено '{row[1]}': {row}"
         )
         return None
-    row[2] = row[2].strip()  # ID
-    row[3] = row[3].strip()  # allele1
-    row[4] = row[4].strip()  # allele2
+    snp_id = row[2].strip()  # ID
+    allele1 = row[3].strip()  # allele1
+    allele2 = row[4].strip()  # allele2
 
     # Проверка валидности аллелей
-    if row[3].upper() not in VALID_BASES or row[4].upper() not in VALID_BASES:
+    if allele1.upper() not in VALID_BASES or allele2.upper() not in VALID_BASES:
         logger.error(
             f"Строка {line_number}: Аллели должны быть A, C, G или T, "
             f"получено '{row[3]}' и '{row[4]}': {row}"
         )
         return None
 
-    return row[0], row[1], row[2], row[3], row[4]
+    return chrom, pos, snp_id, allele1, allele2
 
 
 def get_reference_path(
