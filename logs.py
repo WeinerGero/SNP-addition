@@ -11,10 +11,31 @@ BASE_LOG_DIR = "logs"
 MAX_FOLDERS = 10
 
 
-def setup_logging(log_dir: Path):
+def setup_logging(log_dir: Path) -> logging.Logger:
     """Настраивает логгер с FileHandler в указанной папке."""
-    pass
+    os.makedirs(log_dir, exist_ok=True)
 
+    log_file = log_dir / "app.log"
+
+    logger = logging.getLogger("my_app")
+    logger.setLevel(logging.DEBUG)
+
+    # очищает существующие хендлеры, чтобы не дублировать при повторном вызове
+    if logger.handlers:
+        logger.handlers.clear()
+
+    file_handler = logging.FileHandler(log_file, encoding="utf-8")
+    file_handler.setLevel(logging.DEBUG)
+
+    formatter = logging.Formatter(
+        "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    file_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
+
+    return logger
 
 def create_run_folder():
     """Создаёт папку для текущего запуска и возвращает её путь."""
