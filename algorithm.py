@@ -30,7 +30,7 @@ def validate_header(header: list[str]) -> None:
 def validate_snp_row(
     row: list[str],
     line_number: int,
-) -> tuple[str, int, str, str, str]:
+) -> tuple[str, int, str, str, str] | None:
     """
     Проверяет одну строку SNP и приводит значения к рабочим типам.
 
@@ -40,10 +40,48 @@ def validate_snp_row(
         line_number (int): Номер строки в исходном файле.
 
     Returns:
-        tuple[str, int, str, str, str]: Кортеж
-        (chrom, pos, snp_id, allele1, allele2).
+        tuple[str, int, str, str, str] | None: Кортеж
+        (chrom, pos, snp_id, allele1, allele2) или None
+        в случае ошибки.
     """
-    pass
+    # Проверка количества колонок
+    if len(row) != 5:
+        logger.error(
+            f"Строка {line_number}: Ожидается 5 колонок, "
+            f"получено {len(row)}: {row}"
+        )
+        return None
+
+    # Проверка на пустые значения
+    for i, value in enumerate(row):
+        if value == "":
+            logger.error(
+                f"Строка {line_number}: Пустое значение в колонке {i}: {row}"
+            )
+            return None
+
+    row[0] = row[0].strip()  # CHROM
+    try:
+        row[1] = int(row[1].strip())  # POS
+    except ValueError:
+        logger.error(
+            f"Строка {line_number}: Позиция POS должна быть целым числом, "
+            f"получено '{row[1]}': {row}"
+        )
+        return None
+    row[2] = row[2].strip()  # ID
+    row[3] = row[3].strip()  # allele1
+    row[4] = row[4].strip()  # allele2
+
+    # Проверка валидности аллелей
+    if row[3].upper() not in VALID_BASES or row[4].upper() not in VALID_BASES:
+        logger.error(
+            f"Строка {line_number}: Аллели должны быть A, C, G или T, "
+            f"получено '{row[3]}' и '{row[4]}': {row}"
+        )
+        return None
+
+    return row[0], row[1], row[2], row[3], row[4]
 
 
 def get_reference_path(
@@ -55,7 +93,7 @@ def get_reference_path(
 
     Args:
         reference_dir (Path): Каталог с референсными FASTA-файлами.
-        chrom (str): Название хромосомы, например chr7.
+        chrom (str): Название хромосомы.
 
     Returns:
         Path: Путь к FASTA-файлу выбранной хромосомы.
