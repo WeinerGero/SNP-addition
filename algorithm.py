@@ -1,11 +1,11 @@
 """
-
+Алгоритмы для обработки входного TSV с SNP и определения REF и ALT.
 """
 from pathlib import Path
 from typing import Iterable
 import pysam
 
-from logs import with_logging, get_logger
+from logs import get_logger
 
 logger = get_logger()
 
@@ -100,20 +100,18 @@ def validate_snp_row(
 
 
 def get_reference_path(
-    reference_dir: Path,
     chrom: str,
 ) -> Path:
     """
     Формирует путь к FASTA-файлу нужной хромосомы.
 
     Args:
-        reference_dir (Path): Каталог с референсными FASTA-файлами.
         chrom (str): Название хромосомы.
 
     Returns:
         Path: Путь к FASTA-файлу выбранной хромосомы.
     """
-    return reference_dir / f"{chrom}.fa"
+    return REFERENCE_DIR / f"{chrom}.fa"
 
 
 def open_reference(
@@ -193,7 +191,6 @@ def process_snp(
     Args:
         line_number (int): Номер строки в исходном файле.
         row (list[str]): Значения строки входного TSV.
-        reference_dir (Path): Каталог с референсными FASTA-файлами.
         fasta_cache (dict[str, pysam.Fastafile]): Словарь уже
         открытых FASTA-файлов текущего процесса.
 
@@ -222,7 +219,9 @@ def process_snp(
     # Открываем референсный FASTA-файл для нужной хромосомы,
     # если он ещё не открыт
     chrom = validated_row[0]
-    reference_fasta = open_reference(REFERENCE_DIR / f"{chrom}.fa")
+    reference_fasta = open_reference(
+        fasta_cache[chrom]
+    )
 
     # Получаем референсный нуклеотид для позиции SNP
     pos = validated_row[1]
@@ -230,8 +229,6 @@ def process_snp(
         reference_fasta,
         pos
     )
-
-    close_references(fasta_cache)
 
     # Определяем REF и ALT для SNP
     allele1 = validated_row[3]
@@ -269,24 +266,57 @@ def process_snp(
 
 def process_chunk(
     chunk: list[tuple[int, list[str]]],
-    reference_dir: Path,
     progress_queue=None,
-):
+) -> tuple[dict[int, list[str]], dict[int, dict]]:
     """
     Обрабатывает один участок строк входного TSV.
 
     Args:
         chunk (list[tuple[int, list[str]]]): Список пар
         (номер строки, значения строки).
-        reference_dir (Path): Каталог с референсными FASTA-файлами.
         progress_queue: Очередь для передачи прогресса
         родительскому процессу.
 
     Returns:
-        object: Результаты обработки участка с распознанными
-        и нераспознанными SNP.
+        tuple[dict[int, list[str]], dict[int, dict]]: Результаты обработки
+        участка с распознанными и нераспознанными SNP.
     """
-    pass
+    # Создаём кэш открытых FASTA-файлов для каждой хромосомы в участке
+    fasta_cache = {}
+    for chrom in {row[0] for _, row in chunk if len(row) > 0}:
+        reference_path = get_reference_path(chrom)
+        fasta_cache[chrom] = open_reference(reference_path)
+
+    # Обрабатываем каждую строку в участке
+    recognized_results = {}
+    error_results = {}
+    for line_number, row in chunk:
+        result = process_snp(line_number, row, fasta_cache=fasta_cache)
+
+        # Если есть очередь прогресса,
+        # отправляем сигнал о завершении одной строки
+        if progress_queue is not None:
+            progress_queue.put(1)
+
+        # Если результат None, это заголовок, пропускаем его
+        if result is None:
+            continue
+
+        # Если SNP распознан, добавляем его в результаты
+        if result[1]["status"] == "recognized":
+            recognized_results[result[0]] = result[1]["row"]
+
+        # Возвращаем информацию о нераспознанном варианте
+        else:
+            error_results[result[0]] = {
+                "row": result[1]["row"],
+                "reference_base": result[1]["reference_base"],
+                "reason": result[1]["reason"],
+            }
+
+    close_references(fasta_cache)
+
+    return recognized_results, error_results
 
 
 def close_references(
