@@ -131,6 +131,7 @@ def open_reference(
 
 def fetch_reference_base(
     fasta: pysam.Fastafile,
+    chrom:str,
     pos: int,
 ) -> str:
     """
@@ -138,13 +139,14 @@ def fetch_reference_base(
 
     Args:
         fasta (pysam.Fastafile): Открытый референсный FASTA-файл.
+        chrom (str): Целевая хромосома.
         pos (int): Позиция SNP в координатах 1-based.
 
     Returns:
         str: Один символ референсного нуклеотида
         в верхнем регистре.
     """
-    return fasta.fetch(fasta, pos-1, pos).strip()
+    return fasta.fetch(chrom, pos-1, pos).strip()
 
 
 def determine_ref_alt(
@@ -230,6 +232,7 @@ def process_snp(
     pos = validated_row[1]
     reference_base = fetch_reference_base(
         reference_fasta,
+        chrom,
         pos
     )
 
