@@ -1,0 +1,11 @@
+LINE_NUMBER	ORIGINAL_ROW					REFERENCE_BASE	REASON
+	#CHROM	POS	ID	allele1	allele2		
+420	chr1	145899155	rs2274617	T	C	G	Невозможно определить REF и ALT
+5967	chr10	47420743	rs4342964	T	C	G	Невозможно определить REF и ALT
+5968	chr10	47320207	rs11204215	C	A	T	Невозможно определить REF и ALT
+5969	chr10	47268342	rs12414155	T	C	A	Невозможно определить REF и ALT
+5970	chr10	47099482	rs2790937	G	A	T	Невозможно определить REF и ALT
+5977	chr10	46031829	rs10994675	A	G	C	Невозможно определить REF и ALT
+6508	chr11	54678670	rs527464	C	T	G	Невозможно определить REF и ALT
+8062	chr15	22907410	rs7174982	T	C	G	Невозможно определить REF и ALT
+8063	chr15	22832212	rs4778334	T	C	A	Невозможно определить REF и ALT
