@@ -460,14 +460,20 @@ def main(
             )
             progress_thread.start()
 
-            # параллельная обработка чанков
-            with multiprocessing.Pool(
-                processes=num_processes
-            ) as pool:
-                results = pool.starmap(
-                    _run_process_in_chunks,
-                    process_args
-                )
+            try:
+                with multiprocessing.Pool(
+                    processes=num_processes
+                ) as pool:
+                    results = pool.starmap(
+                        _run_process_in_chunks,
+                        process_args
+                    )
+            finally:
+                # сообщает потоку прогресса, что работа завершена
+                progress_queue.put(None)
+
+                # дожидается завершения потока прогресса
+                progress_thread.join()
 
             # завершение потока прогресс бара
             progress_queue.put(None)
