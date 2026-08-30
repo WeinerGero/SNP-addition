@@ -275,13 +275,34 @@ def calculate_statistics(
     error_results:dict[int, dict]
     ):
     """
-    Расчитывает статистику работы для логов и записывает их в файл report.txt
+    Расчитывает статистику работы для логов.
 
     Args:
         recognized_results (dict[int, list]): Словарь из распознанных SNP.
         error_results (dict[int, dict]): Словарь из неопределённых SNP.
     """
-    pass
+    total_snps = len(recognized_results) + len(error_results)
+
+    recognized_count = len(recognized_results)
+    unrecognized_count = len(error_results)
+
+    recognized_percent = recognized_count / total_snps * 100
+    unrecognized_percent = unrecognized_count / total_snps * 100
+
+    error_reasons = dict(Counter(
+        error["reason"]
+        for error in error_results.values()
+    ))
+
+    return {
+        "total_snps": total_snps,
+        "recognized": recognized_count,
+        "recognized_percent": recognized_percent,
+        "unrecognized": unrecognized_count,
+        "unrecognized_percent": unrecognized_percent,
+        "error_reasons": error_reasons
+    }
+
 
 @with_logging
 @with_progress
