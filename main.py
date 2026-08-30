@@ -12,6 +12,8 @@ import csv
 from logs import with_logging, get_logger
 from algorithm import process_chunk
 
+logger = get_logger()
+
 
 def with_progress(func):
     """
@@ -80,18 +82,51 @@ def open_tsv_file(input_tsv_path) -> list[str]:
     return data
 
 
-def separate_chunks(lines:int, num_process:int) -> list[tuple[int,int]]:
+def separate_chunks(lines:int) -> list[tuple[int,int]]:
     """
-    Разбивает набор SNP на несколько
+    Разбивает набор SNP на несколько чанков.
 
     Args:
         lines (int): Количество SNP в наборе.
-        num_process (int): Количество доступных процессов в системе.
 
     Returns:
         list[tuple[int,int]]: Список с множествами: начало чанка, конец чанка.
     """
-    pass
+    num_processes = define_number_of_processes()
+
+    # Если нет доступных процессов
+    if num_processes <= 0:
+        logger.error("Количество процессов должно быть > 0.")
+        raise ValueError("Недостаточно доступных процессов.")
+
+    # Если нет строк в файле
+    if lines <= 0:
+        logger.error("Файл пустой.")
+        return []
+
+    if num_processes == 1:
+        logger.warning("Доступен только один процесс.")
+        return [(1, lines)]
+
+    # Если доступных процессов больше, чем строк то проходимся генератором
+    if num_processes >= lines:
+        logger.info(f"Доступно {num_processes} процессов.")
+        return [(i, i) for i in range(lines)]
+
+    base_size = lines // num_processes
+
+    # Формирует список чанков с началом и концом, кроме последнего чанка
+    chunks = [
+        (i * base_size, (i + 1) * base_size - 1)
+        for i in range(num_processes - 1)
+    ]
+
+    # Отдельно формирует последний чанк и добавяляет остатки
+    last_start = (num_processes - 1) * base_size
+    last_end = lines - 1
+    chunks.append((last_start, last_end))
+
+    return chunks
 
 
 def run_process_in_chunks(
