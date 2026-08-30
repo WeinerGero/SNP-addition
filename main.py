@@ -54,7 +54,7 @@ def define_number_of_processes() -> int:
     return multiprocessing.cpu_count()
 
 
-def open_tsv_file(input_tsv_path) -> list[str]:
+def open_tsv_file(input_tsv_path:str) -> list[str]:
     """
     Открывает .tsv файл с SNP.
     Формат #CHROM<TAB>POS<TAB>ID<TAB>allele1<TAB>allele2
@@ -114,6 +114,7 @@ def separate_chunks(lines:int) -> list[tuple[int,int]]:
         return [(i, i) for i in range(lines)]
 
     base_size = lines // num_processes
+    logger.info(f"Размер чанка {base_size} строк")
 
     # Формирует список чанков с началом и концом, кроме последнего чанка
     chunks = [
@@ -130,21 +131,32 @@ def separate_chunks(lines:int) -> list[tuple[int,int]]:
 
 
 def run_process_in_chunks(
-    input_tsv_path,
-    output_tsv_path=None
+    chunk_lines:list[str],
+    start_end_chunk:tuple[int, int]
     ) -> tuple[dict[int, list], dict[int, dict]]:
     """
     Запускает алгоритм в одном чанке.
 
     Args:
-        input_tsv_path (_type_): _description_
-        output_tsv_path (_type_, optional): _description_. Defaults to None.
+        chunk (list[str]): Список строк чанка.
+        start_end_chunk (tuple[int, int]): Кортеж из номера начальной строки
+        чанка и конечной строки.
 
     Returns:
         tuple[dict[int, list], dict[int, dict]]: Кортеж из
         успешно определённых SNP и нераспознанных SNP с информацией об ошибке.
     """
-    pass
+    # Определяет стартовую строку чанка
+    start, _ = start_end_chunk
+
+    # Формирует список: номер строки - содержание строки.
+    numerated_rows_chunk = [
+        (start + i, list(row))
+        for i, row in enumerate(chunk_lines)
+    ]
+
+    # Получает распознанные и нераспознанные SNP.
+    return process_chunk(numerated_rows_chunk)
 
 
 def merge_results(
@@ -198,7 +210,8 @@ def calculate_statistics(
     """
     pass
 
-
+@with_logging
+@with_progress
 def main(input:str, output:str):
     """
     Принимает файл .tsv формата с вариантами SNP и возвращает определённые SNP
