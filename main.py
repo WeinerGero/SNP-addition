@@ -14,34 +14,6 @@ from algorithm import process_chunk
 logger = get_logger()
 
 
-def with_progress(func):
-    """
-    Декоратор для прогресс-бара со средней скоростью выполнения процесса
-    и оставшимся временем.
-
-    Args:
-        func (_type_): Принимает на вход функцию, которую нужно обернуть
-        в декоратор.
-
-    Returns:
-        _type_: Возвращает прогресс-бар.
-    """
-    @wraps(func)
-    def wrapper(*args, total: int, **kwargs):
-        with tqdm(
-            total=total,
-            desc="Обработка SNP",
-            unit="SNP",
-        ) as progress_bar:
-            return func(
-                *args,
-                progress_bar=progress_bar,
-                **kwargs
-            )
-
-    return wrapper
-
-
 def _define_number_of_processes() -> int:
     """
     Определяет количество доступных процессов.
@@ -434,7 +406,6 @@ def _consume_progress(
 
 
 @with_logging
-@with_progress
 def main(
         input:str,
         output:str,
@@ -456,44 +427,51 @@ def main(
     num_processes = _define_number_of_processes()
     chunk_positions = _separate_chunks(len(rows), num_processes)
 
-    # подготовка очереди прогресса и аргументов для процессов
-    with multiprocessing.Manager() as manager:
-        progress_queue = manager.Queue()
-        process_args = []
+    total = len(rows) - 1 if len(rows) > 0 else 0
 
-        for chunk_position in chunk_positions:
-            chunk_lines = _create_chunk_rows(
-                rows,
-                chunk_position
-            )
+    with tqdm(
+        total=total,
+        desc="Обработка SNP",
+        unit="SNP"
+    ) as progress_bar:
+        # подготовка очереди прогресса и аргументов для процессов
+        with multiprocessing.Manager() as manager:
+            progress_queue = manager.Queue()
+            process_args = []
 
-            process_args.append(
-                (
-                    chunk_lines,
-                    chunk_position,
-                    progress_queue
+            for chunk_position in chunk_positions:
+                chunk_lines = _create_chunk_rows(
+                    rows,
+                    chunk_position
                 )
+
+                process_args.append(
+                    (
+                        chunk_lines,
+                        chunk_position,
+                        progress_queue
+                    )
+                )
+
+            # запуск отдельного потока для обновления прогресс бара
+            progress_thread = threading.Thread(
+                target=_consume_progress,
+                args=(progress_queue, progress_bar)
             )
+            progress_thread.start()
 
-        # запуск отдельного потока для обновления прогресс бара
-        progress_thread = threading.Thread(
-            target=_consume_progress,
-            args=(progress_queue, progress_bar)
-        )
-        progress_thread.start()
+            # параллельная обработка чанков
+            with multiprocessing.Pool(
+                processes=num_processes
+            ) as pool:
+                results = pool.starmap(
+                    _run_process_in_chunks,
+                    process_args
+                )
 
-        # параллельная обработка чанков
-        with multiprocessing.Pool(
-            processes=num_processes
-        ) as pool:
-            results = pool.starmap(
-                _run_process_in_chunks,
-                process_args
-            )
-
-        # завершение потока прогресс бара
-        progress_queue.put(None)
-        progress_thread.join()
+            # завершение потока прогресс бара
+            progress_queue.put(None)
+            progress_thread.join()
 
     # разделение результатов процессов
     recognized_results_list = []
