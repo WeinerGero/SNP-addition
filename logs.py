@@ -136,6 +136,22 @@ def get_logger() -> logging.Logger:
     return logging.getLogger("my_app")
 
 
+def get_current_log_dir() -> Path:
+    """
+    Возвращает путь к папке логов текущего запуска.
+
+    Returns:
+        Path: Путь к папке текущего запуска.
+    """
+    logger = get_logger()
+
+    for handler in logger.handlers:
+        if isinstance(handler, logging.FileHandler):
+            return Path(handler.baseFilename).parent
+
+    raise RuntimeError("Папка текущего запуска логирования не найдена.")
+
+
 if __name__ == "__main__":
     # пример использования
     from logs import with_logging, get_logger

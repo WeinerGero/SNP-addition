@@ -9,7 +9,7 @@ from functools import wraps
 from collections import Counter
 import csv
 
-from logs import with_logging, get_logger
+from logs import with_logging, get_logger, get_current_log_dir
 from algorithm import process_chunk
 
 logger = get_logger()
@@ -274,6 +274,43 @@ def write_results_to_file(
         )
         raise
 
+    # Запись ошибок
+    error_header = [
+        "#CHROM",
+        "POS",
+        "ID",
+        "allele1",
+        "allele2",
+        "REASON",
+    ]
+
+    log_dir = get_current_log_dir()
+    error_tsv_path = log_dir / "unrecognized_SNPs.tsv"
+
+    with open(
+        error_tsv_path,
+        "w",
+        newline="",
+        encoding="utf-8"
+    ) as f:
+        writer = csv.writer(
+            f,
+            delimiter="\t",
+            lineterminator="\n"
+        )
+
+        writer.writerow(error_header)
+
+        for line_number, error_info in error_results.items():
+            writer.writerow([
+                *error_info["row"],
+                error_info["reason"],
+            ])
+
+    logger.info(
+        f"Нераспознанные SNP записаны: {error_tsv_path} "
+        f"(строк: {len(error_results)})"
+    )
 
 def calculate_statistics(
     recognized_results:dict[int, list],
