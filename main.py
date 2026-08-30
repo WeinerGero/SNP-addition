@@ -111,7 +111,7 @@ def separate_chunks(lines:int, num_processes:int) -> list[tuple[int,int]]:
     # Если доступных процессов больше, чем строк то проходимся генератором
     if num_processes >= lines:
         logger.info(f"Доступно {num_processes} процессов.")
-        return [(i, i) for i in range(lines)]
+        return [(i+1, i+1) for i in range(lines)]
 
     base_size = lines // num_processes
     logger.info(f"Размер чанка {base_size} строк")
