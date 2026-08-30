@@ -82,19 +82,18 @@ def open_tsv_file(input_tsv_path:str) -> list[str]:
     return data
 
 
-def separate_chunks(lines:int) -> list[tuple[int,int]]:
+def separate_chunks(lines:int, num_processes:int) -> list[tuple[int,int]]:
     """
     Разбивает набор SNP на несколько чанков.
 
     Args:
         lines (int): Количество SNP в наборе.
+        num_processes (int): Количество доступных процессов.
 
     Returns:
         list[tuple[int,int]]: Список с множествами: начало чанка, конец чанка.
         1-based
     """
-    num_processes = define_number_of_processes()
-
     # Если нет доступных процессов
     if num_processes <= 0:
         logger.error("Количество процессов должно быть > 0.")
@@ -341,8 +340,68 @@ def main(input:str, output:str) -> dict:
     Args:
         input (str): Путь входящего .tsv файла.
         output (str): Путь для выгрузки итогового .tsv файла.
+
+    Returns:
+        dict: Статистика для логов.
     """
-    pass
+    # Читает входной TSV
+    rows = open_tsv_file(input)
+
+    # Определяет количество достпуных процессов
+    num_processes = define_number_of_processes()
+
+    # Получает диапазоны чанков в формате 1-based
+    chunk_positions = separate_chunks(len(rows), num_processes)
+
+    # Формирует аргументы для каждого процесса
+    process_args = []
+
+    for chunk_position in chunk_positions:
+        chunk_lines = create_chunk_rows(
+            rows,
+            chunk_position
+        )
+
+        process_args.append(
+            (chunk_lines, chunk_position)
+        )
+
+    with multiprocessing.Pool(
+        processes=num_processes
+    ) as pool:
+        results = pool.starmap(
+            run_process_in_chunks,
+            process_args
+        )
+
+    # Разделяет результаты каждого процесса
+    recognized_results_list = []
+    error_results_list = []
+
+    for recognized_results, error_results in results:
+        recognized_results_list.append(recognized_results)
+        error_results_list.append(error_results)
+
+    # Объединяет результаты процессов
+    recognized_results, error_results = merge_results(
+        recognized_results_list,
+        error_results_list
+    )
+
+    # Записывает распознанные и нераспознанные SNP
+    write_results_to_file(
+        output,
+        recognized_results,
+        error_results
+    )
+
+    # Рассчитывает итоговую статистику
+    statistic = calculate_statistics(
+        recognized_results,
+        error_results
+    )
+
+    return statistic
 
 if __name__ == "__main__":
     # Принимает аргументы --input и --output
