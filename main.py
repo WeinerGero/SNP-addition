@@ -313,9 +313,27 @@ def calculate_statistics(
     }
 
 
+def create_chunk_rows(
+    rows: list[str],
+    chunks_positions:tuple[int, int]
+    ) -> list[str]:
+    """
+    Формирует спислк строк чанков по заданным позициям.
+
+    Args:
+        rows (list[str]):
+        chunks_positions (tuple[int, int]): Кортеж позиций начала и конца
+        чанков. 1-based
+    Returns:
+        list[str]: Формирует список строк чанков по заданным позициям.
+    """
+    start, end = chunks_positions
+    return rows[start - 1:end]
+
+
 @with_logging
 @with_progress
-def main(input:str, output:str):
+def main(input:str, output:str) -> dict:
     """
     Принимает файл .tsv формата с вариантами SNP и возвращает определённые SNP
     в output файл .tsv формата.
@@ -325,7 +343,6 @@ def main(input:str, output:str):
         output (str): Путь для выгрузки итогового .tsv файла.
     """
     pass
-
 
 if __name__ == "__main__":
     # Принимает аргументы --input и --output
