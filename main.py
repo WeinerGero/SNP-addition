@@ -177,7 +177,27 @@ def merge_results(
         tuple[dict[int, list], dict[int, dict]: Кортеж из объединённых
         результатов успешно определённых SNP и нераспознанных SNP с ошибками.
     """
-    pass
+    merged_recognized = {}
+    merged_errors = {}
+
+    # Объединяем успешные результаты
+    for result_dict in recognized_results_list:
+        for line_num, row in result_dict.items():
+            if line_num in merged_recognized:
+                merged_recognized[line_num].extend(row)
+            else:
+                merged_recognized[line_num] = list(row)
+
+    # Объединяем ошибки
+    for line_num, error_info in error_results_list:
+        # Если для строки уже есть ошибка, сохраняем последнюю
+        merged_errors[line_num] = error_info
+
+    # Сортируем по номеру строки
+    sorted_recognized = dict(sorted(merged_recognized.items()))
+    sorted_errors = dict(sorted(merged_errors.items()))
+
+    return sorted_recognized, sorted_errors
 
 
 def write_results_to_file(
