@@ -42,7 +42,7 @@ def with_progress(func):
     return wrapper
 
 
-def define_number_of_processes() -> int:
+def _define_number_of_processes() -> int:
     """
     Определяет количество доступных процессов.
     Args:
@@ -53,7 +53,7 @@ def define_number_of_processes() -> int:
     return multiprocessing.cpu_count()
 
 
-def open_tsv_file(input_tsv_path:str) -> list[list[str]]:
+def _open_tsv_file(input_tsv_path:str) -> list[list[str]]:
     """
     Открывает .tsv файл с SNP.
     Формат #CHROM<TAB>POS<TAB>ID<TAB>allele1<TAB>allele2
@@ -86,7 +86,7 @@ def open_tsv_file(input_tsv_path:str) -> list[list[str]]:
     return data
 
 
-def separate_chunks(lines:int, num_processes:int) -> list[tuple[int,int]]:
+def _separate_chunks(lines:int, num_processes:int) -> list[tuple[int,int]]:
     """
     Разбивает набор SNP на несколько чанков.
 
@@ -135,7 +135,7 @@ def separate_chunks(lines:int, num_processes:int) -> list[tuple[int,int]]:
     return chunks
 
 
-def run_process_in_chunks(
+def _run_process_in_chunks(
     chunk_lines:list[list[str]],
     start_end_chunk:tuple[int, int],
     progress_queue=None
@@ -168,7 +168,7 @@ def run_process_in_chunks(
     )
 
 
-def merge_results(
+def _merge_results(
     recognized_results_list:list[dict[int, list]],
     error_results_list:list[dict[int, dict]]
     ) -> tuple[dict[int, list], dict[int, dict]]:
@@ -210,7 +210,7 @@ def merge_results(
     return sorted_recognized, sorted_errors
 
 
-def write_results_to_file(
+def _write_results_to_file(
     output_tsv_path:str,
     recognized_results:dict[int, list],
     error_results:dict[int, dict]
@@ -339,7 +339,7 @@ with open(
             error_info["reason"],
         ])
 
-def calculate_statistics(
+def _calculate_statistics(
     recognized_results:dict[int, list],
     error_results:dict[int, dict]
     ) -> dict:
@@ -393,7 +393,7 @@ def calculate_statistics(
     }
 
 
-def create_chunk_rows(
+def _create_chunk_rows(
     rows: list[list[str]],
     chunks_positions:tuple[int, int]
     ) -> list[list[str]]:
@@ -411,7 +411,7 @@ def create_chunk_rows(
     return rows[start - 1:end]
 
 
-def consume_progress(
+def _consume_progress(
     progress_queue,
     progress_bar
 ) -> None:
@@ -452,9 +452,9 @@ def main(
         dict: Статистика для логов.
     """
     # подготовка входных данных и разбиение на чанки
-    rows = open_tsv_file(input)
-    num_processes = define_number_of_processes()
-    chunk_positions = separate_chunks(len(rows), num_processes)
+    rows = _open_tsv_file(input)
+    num_processes = _define_number_of_processes()
+    chunk_positions = _separate_chunks(len(rows), num_processes)
 
     # подготовка очереди прогресса и аргументов для процессов
     with multiprocessing.Manager() as manager:
@@ -462,7 +462,7 @@ def main(
         process_args = []
 
         for chunk_position in chunk_positions:
-            chunk_lines = create_chunk_rows(
+            chunk_lines = _create_chunk_rows(
                 rows,
                 chunk_position
             )
@@ -477,7 +477,7 @@ def main(
 
         # запуск отдельного потока для обновления прогресс бара
         progress_thread = threading.Thread(
-            target=consume_progress,
+            target=_consume_progress,
             args=(progress_queue, progress_bar)
         )
         progress_thread.start()
@@ -487,7 +487,7 @@ def main(
             processes=num_processes
         ) as pool:
             results = pool.starmap(
-                run_process_in_chunks,
+                _run_process_in_chunks,
                 process_args
             )
 
@@ -504,20 +504,20 @@ def main(
         error_results_list.append(error_results)
 
     # объединение результатов
-    recognized_results, error_results = merge_results(
+    recognized_results, error_results = _merge_results(
         recognized_results_list,
         error_results_list
     )
 
     # запись результатов в файлы
-    write_results_to_file(
+    _write_results_to_file(
         output,
         recognized_results,
         error_results
     )
 
     # расчёт итоговой статистики
-    statistic = calculate_statistics(
+    statistic = _calculate_statistics(
         recognized_results,
         error_results
     )
