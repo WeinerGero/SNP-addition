@@ -345,7 +345,7 @@ def calculate_statistics(
                 "recognized_percent": 0,
                 "unrecognized": 0,
                 "unrecognized_percent": 0,
-                "error_reasons": "SNP не было найдено, проверьте логи."
+                "error_reasons": {"SNP не было найдено, проверьте логи.":1}
             }
 
     recognized_count = len(recognized_results)
