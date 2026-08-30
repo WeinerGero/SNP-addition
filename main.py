@@ -14,6 +14,17 @@ from algorithm import process_chunk
 
 
 def with_progress(func):
+    """
+    Декоратор для прогресс-бара со средней скоростью выполнения процесса
+    и оставшимся временем.
+
+    Args:
+        func (_type_): Принимает на вход функцию, которую нужно обернуть
+        в декоратор.
+
+    Returns:
+        _type_: Возвращает прогресс-бар.
+    """
     @wraps(func)
     def wrapper(*args, total: int, **kwargs):
         with tqdm(
