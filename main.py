@@ -370,7 +370,7 @@ def calculate_statistics(
 
 
 def create_chunk_rows(
-    rows: list[str],
+    rows: list[list[str]],
     chunks_positions:tuple[int, int]
     ) -> list[list[str]]:
     """
