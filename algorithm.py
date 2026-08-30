@@ -321,14 +321,14 @@ def process_chunk(
     for line_number, row in chunk:
         result = process_snp(line_number, row, fasta_cache=fasta_cache)
 
+        # Если результат None, это заголовок, пропускаем его
+        if result is None:
+            continue
+
         # Если есть очередь прогресса,
         # отправляем сигнал о завершении одной строки
         if progress_queue is not None:
             progress_queue.put(1)
-
-        # Если результат None, это заголовок, пропускаем его
-        if result is None:
-            continue
 
         # Если SNP распознан, добавляем его в результаты
         if result[1]["status"] == "recognized":
