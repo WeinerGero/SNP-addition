@@ -273,13 +273,22 @@ def write_results_to_file(
 def calculate_statistics(
     recognized_results:dict[int, list],
     error_results:dict[int, dict]
-    ):
+    ) -> dict:
     """
     Расчитывает статистику работы для логов.
 
     Args:
         recognized_results (dict[int, list]): Словарь из распознанных SNP.
         error_results (dict[int, dict]): Словарь из неопределённых SNP.
+
+    Returns:
+        dict: Словарь со статистикой:
+        total_snps - всего SNP
+        recognized - распознано SNP
+        recognized_percent - % распозннаных SNP относительно всех
+        unrecognized - нераспознано SNP
+        unrecognized_percent - % нераспозннаных SNP относительно всех
+        error_reasons - словарь с перечнем всех ошибок и их количества
     """
     total_snps = len(recognized_results) + len(error_results)
 
