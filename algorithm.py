@@ -75,7 +75,8 @@ def validate_snp_row(
             )
             return None
 
-    chrom = row[0].strip()  # CHROM
+    chrom = row[0].strip()
+
     try:
         pos = int(row[1].strip())
     except ValueError:
@@ -84,9 +85,33 @@ def validate_snp_row(
             f"получено '{row[1]}': {row}"
         )
         return None
-    snp_id = row[2].strip()  # ID
-    allele1 = row[3].strip()  # allele1
-    allele2 = row[4].strip()  # allele2
+
+    # проверяет, что позиция положительная
+    if pos <= 0:
+        logger.error(
+            f"Строка {line_number}: POS должен быть больше 0, "
+            f"получено '{pos}': {row}"
+        )
+        return None
+
+    # проверяет название хромосомы
+    valid_chromosomes = {
+        *(f"chr{i}" for i in range(1, 23)),
+        "chrX",
+        "chrY",
+        "chrM",
+    }
+
+    if chrom not in valid_chromosomes:
+        logger.error(
+            f"Строка {line_number}: Неверная хромосома '{chrom}': {row}"
+        )
+        return None
+
+    snp_id = row[2].strip()
+    allele1 = row[3].strip()
+    allele2 = row[4].strip()
+
 
     # Проверка валидности аллелей
     if allele1.upper() not in VALID_BASES or allele2.upper() not in VALID_BASES:
