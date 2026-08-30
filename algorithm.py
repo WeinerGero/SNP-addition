@@ -267,7 +267,7 @@ def process_snp(
 def process_chunk(
     chunk: list[tuple[int, list[str]]],
     progress_queue=None,
-) -> tuple[dict[int, list[str]], dict[int, dict]]:
+) -> tuple[dict[int, list], dict[int, dict]]:
     """
     Обрабатывает один участок строк входного TSV.
 
