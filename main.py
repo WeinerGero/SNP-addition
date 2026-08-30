@@ -38,7 +38,7 @@ def define_number_of_processes() -> int:
     Returns:
         int: Возвращает целочисленное число доступных процессов.
     """
-    pass
+    return multiprocessing.cpu_count()
 
 
 def open_tsv_file(input_tsv_path) -> list[str]:
