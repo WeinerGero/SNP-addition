@@ -53,7 +53,7 @@ def define_number_of_processes() -> int:
     return multiprocessing.cpu_count()
 
 
-def open_tsv_file(input_tsv_path:str) -> list[str]:
+def open_tsv_file(input_tsv_path:str) -> list[list[str]]:
     """
     Открывает .tsv файл с SNP.
     Формат #CHROM<TAB>POS<TAB>ID<TAB>allele1<TAB>allele2
@@ -62,7 +62,7 @@ def open_tsv_file(input_tsv_path:str) -> list[str]:
         input_tsv_path (str): Путь к .tsv файлу.
 
     Returns:
-        list[str]: Набор строк, где первая строка - заголовок, а остлаьные SNP
+        list[list[str]]: Набор строк, где первая строка - заголовок, а остлаьные SNP
     """
     data = []
     try:
@@ -136,7 +136,7 @@ def separate_chunks(lines:int, num_processes:int) -> list[tuple[int,int]]:
 
 
 def run_process_in_chunks(
-    chunk_lines:list[str],
+    chunk_lines:list[list[str]],
     start_end_chunk:tuple[int, int],
     progress_queue=None
     ) -> tuple[dict[int, list], dict[int, dict]]:
@@ -144,7 +144,7 @@ def run_process_in_chunks(
     Запускает алгоритм в одном чанке.
 
     Args:
-        chunk (list[str]): Список строк чанка.
+        chunk (list[list[str]]): Список строк чанка.
         start_end_chunk (tuple[int, int]): Кортеж из номера начальной строки
         чанка и конечной строки. 1-based
 
@@ -372,7 +372,7 @@ def calculate_statistics(
 def create_chunk_rows(
     rows: list[str],
     chunks_positions:tuple[int, int]
-    ) -> list[str]:
+    ) -> list[list[str]]:
     """
     Формирует спислк строк чанков по заданным позициям.
 
@@ -381,7 +381,7 @@ def create_chunk_rows(
         chunks_positions (tuple[int, int]): Кортеж позиций начала и конца
         чанков. 1-based
     Returns:
-        list[str]: Формирует список строк чанков по заданным позициям.
+        list[list[str]]: Формирует список строк чанков по заданным позициям.
     """
     start, end = chunks_positions
     return rows[start - 1:end]
