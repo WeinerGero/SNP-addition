@@ -414,7 +414,6 @@ def consume_progress(
 def main(
         input:str,
         output:str,
-        total:int,
         progress_bar=None
     ) -> dict:
     """
@@ -524,7 +523,4 @@ if __name__ == "__main__":
         print("Error: Output file path is required.")
         sys.exit(1)
 
-    with open(args.input, encoding="utf-8") as f:
-        total = sum(1 for _ in f) - 1  # минус заголовок
-
-    main(args.input, args.output, total=total)
+    main(args.input, args.output)
