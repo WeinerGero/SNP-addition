@@ -297,19 +297,19 @@ def _write_results_to_file(
             "",
         ])
 
-    # запись нераспознанных SNP
-    for line_number, error_info in error_results.items():
-        original_row = list(error_info["row"])
+        # запись нераспознанных SNP
+        for line_number, error_info in error_results.items():
+            original_row = list(error_info["row"])
 
-        # приводит исходную строку к пяти колонкам
-        original_row = original_row[:5]
-        original_row += [""] * (5 - len(original_row))
+            # приводит исходную строку к пяти колонкам
+            original_row = original_row[:5]
+            original_row += [""] * (5 - len(original_row))
 
-        writer.writerow([
-            line_number,
-            *original_row,
-            error_info["reason"],
-        ])
+            writer.writerow([
+                line_number,
+                *original_row,
+                error_info["reason"],
+            ])
 
 def _calculate_statistics(
     recognized_results:dict[int, list],
