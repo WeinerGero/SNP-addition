@@ -144,7 +144,7 @@ def fetch_reference_base(
         str: Один символ референсного нуклеотида
         в верхнем регистре.
     """
-    return pysam.fetch(fasta, pos-1, pos).strip()
+    return fasta.fetch(fasta, pos-1, pos).strip()
 
 
 def determine_ref_alt(
