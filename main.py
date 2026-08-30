@@ -332,7 +332,12 @@ def create_chunk_rows(
 
 @with_logging
 @with_progress
-def main(input:str, output:str) -> dict:
+def main(
+        input:str,
+        output:str,
+        total:int,
+        progress_bar=None
+    ) -> dict:
     """
     Принимает файл .tsv формата с вариантами SNP и возвращает определённые SNP
     в output файл .tsv формата.
@@ -417,4 +422,7 @@ if __name__ == "__main__":
         print("Error: Output file path is required.")
         sys.exit(1)
 
-    main(args.input, args.output)
+    with open(args.input, encoding="utf-8") as f:
+        total = sum(1 for _ in f) - 1  # минус заголовок
+
+    main(args.input, args.output, total=total)
