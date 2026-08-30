@@ -471,15 +471,6 @@ def main(
         progress_queue.put(None)
         progress_thread.join()
 
-    # параллельная обработка чанков
-    with multiprocessing.Pool(
-        processes=num_processes
-    ) as pool:
-        results = pool.starmap(
-            run_process_in_chunks,
-            process_args
-        )
-
     # разделение результатов процессов
     recognized_results_list = []
     error_results_list = []
