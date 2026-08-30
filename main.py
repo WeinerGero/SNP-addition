@@ -190,9 +190,10 @@ def merge_results(
                 merged_recognized[line_num] = list(row)
 
     # Объединяем ошибки
-    for line_num, error_info in error_results_list:
-        # Если для строки уже есть ошибка, сохраняем последнюю
-        merged_errors[line_num] = error_info
+    for error_dict in error_results_list:
+        for line_num, error_info in error_dict.items():
+            # Если для строки уже есть ошибка, сохраняем последнюю
+            merged_errors[line_num] = error_info
 
     # Сортируем по номеру строки
     sorted_recognized = dict(sorted(merged_recognized.items()))
