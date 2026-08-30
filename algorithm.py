@@ -226,13 +226,6 @@ def process_snp(
     # получает уже открытый референсный файл
     reference_fasta = fasta_cache[chrom]
 
-    # Открываем референсный FASTA-файл для нужной хромосомы,
-    # если он ещё не открыт
-    chrom = validated_row[0]
-    reference_fasta = open_reference(
-        fasta_cache[chrom]
-    )
-
     # Получаем референсный нуклеотид для позиции SNP
     pos = validated_row[1]
     reference_base = fetch_reference_base(
