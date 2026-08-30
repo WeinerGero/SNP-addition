@@ -91,6 +91,7 @@ def separate_chunks(lines:int) -> list[tuple[int,int]]:
 
     Returns:
         list[tuple[int,int]]: Список с множествами: начало чанка, конец чанка.
+        1-based
     """
     num_processes = define_number_of_processes()
 
@@ -117,14 +118,15 @@ def separate_chunks(lines:int) -> list[tuple[int,int]]:
     logger.info(f"Размер чанка {base_size} строк")
 
     # Формирует список чанков с началом и концом, кроме последнего чанка
+    # 1-based
     chunks = [
-        (i * base_size, (i + 1) * base_size - 1)
+        (i * base_size + 1, (i + 1) * base_size)
         for i in range(num_processes - 1)
     ]
 
-    # Отдельно формирует последний чанк и добавяляет остатки
-    last_start = (num_processes - 1) * base_size
-    last_end = lines - 1
+    # 1-based
+    last_start = (num_processes - 1) * base_size + 1
+    last_end = lines
     chunks.append((last_start, last_end))
 
     return chunks
@@ -140,7 +142,7 @@ def run_process_in_chunks(
     Args:
         chunk (list[str]): Список строк чанка.
         start_end_chunk (tuple[int, int]): Кортеж из номера начальной строки
-        чанка и конечной строки.
+        чанка и конечной строки. 1-based
 
     Returns:
         tuple[dict[int, list], dict[int, dict]]: Кортеж из
@@ -211,10 +213,61 @@ def write_results_to_file(
 
     Args:
         output_tsv_path (str): Путь для файла выхода.
-        recognized_results (dict[int, list]): Словарь из распознанных SNP.
-        error_results (dict[int, dict]): Словарь из неопределённых SNP.
+        recognized_results (dict[int, list]): Словарь из сортированных
+        распознанных SNP.
+        error_results (dict[int, dict]): Словарь из сортированных
+        неопределённых SNP.
     """
-    pass
+    header = ["#CHROM", "POS", "ID", "REF", "ALT"]
+
+    try:
+        logger.info(f"Начинаю запись TSV-файла: {output_tsv_path}")
+        logger.debug(f"Количество строк для записи: {len(recognized_results)}")
+
+        with open(output_tsv_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, delimiter="\t", lineterminator="\n")
+
+            # Пишет заголовок
+            writer.writerow(header)
+            logger.debug("Заголовок записан.")
+
+            # Пишет строки
+            for line_number, row in recognized_results.items():
+                # Валидация строки: ожидает список/кортеж, не пустой
+                if not isinstance(row, (list, tuple)):
+                    logger.error(
+                        f"Строка {line_number} имеет неверный"
+                        f"тип данных: {type(row)}"
+                    )
+                    raise ValueError(
+                        "Неверный тип данных для строки"
+                        f"{line_number}: ожидается list/tuple"
+                    )
+                writer.writerow(row)
+
+        logger.info(
+            f"Файл успешно записан: {output_tsv_path}"
+            f"(строк: {len(recognized_results)})"
+        )
+
+    except FileNotFoundError:
+        logger.error(
+            f"Не удалось открыть файл для записи: {output_tsv_path}."
+            "Путь не найден."
+        )
+        raise
+    except PermissionError:
+        logger.error(f"Нет прав на запись в файл: {output_tsv_path}")
+        raise
+    except ValueError as ve:
+        logger.error(f"Ошибка валидации данных при записи TSV: {ve}")
+        raise
+    except Exception as e:
+        logger.exception(
+            "Неожиданная ошибка при записи TSV-файла"
+            f"{output_tsv_path}: {e}"
+        )
+        raise
 
 
 def calculate_statistics(
