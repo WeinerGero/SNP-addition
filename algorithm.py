@@ -286,9 +286,6 @@ def process_chunk(
     """
     # Создаём кэш открытых FASTA-файлов для каждой хромосомы в участке
     fasta_cache = {}
-    for chrom in {row[0] for _, row in chunk if len(row) > 0}:
-        reference_path = get_reference_path(chrom)
-        fasta_cache[chrom] = open_reference(reference_path)
 
     # Обрабатываем каждую строку в участке
     recognized_results = {}
