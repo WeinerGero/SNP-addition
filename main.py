@@ -288,42 +288,42 @@ def _write_results_to_file(
     ]
 
     # запись нераспознанных SNP
-log_dir = get_current_log_dir()
-error_tsv_path = log_dir / "unrecognized_SNPs.tsv"
+    log_dir = get_current_log_dir()
+    error_tsv_path = log_dir / "unrecognized_SNPs.tsv"
 
-with open(
-    error_tsv_path,
-    "w",
-    newline="",
-    encoding="utf-8"
-) as f:
-    writer = csv.writer(
-        f,
-        delimiter="\t",
-        lineterminator="\n"
-    )
+    with open(
+        error_tsv_path,
+        "w",
+        newline="",
+        encoding="utf-8"
+    ) as f:
+        writer = csv.writer(
+            f,
+            delimiter="\t",
+            lineterminator="\n"
+        )
 
-    # основная строка заголовка
-    writer.writerow([
-        "LINE_NUMBER",
-        "ORIGINAL_ROW",
-        "",
-        "",
-        "",
-        "",
-        "REASON",
-    ])
+        # основная строка заголовка
+        writer.writerow([
+            "LINE_NUMBER",
+            "ORIGINAL_ROW",
+            "",
+            "",
+            "",
+            "",
+            "REASON",
+        ])
 
-    # подколонки исходной строки
-    writer.writerow([
-        "",
-        "#CHROM",
-        "POS",
-        "ID",
-        "allele1",
-        "allele2",
-        "",
-    ])
+        # подколонки исходной строки
+        writer.writerow([
+            "",
+            "#CHROM",
+            "POS",
+            "ID",
+            "allele1",
+            "allele2",
+            "",
+        ])
 
     # запись нераспознанных SNP
     for line_number, error_info in error_results.items():
