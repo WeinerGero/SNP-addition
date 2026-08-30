@@ -287,33 +287,57 @@ def write_results_to_file(
         "REASON",
     ]
 
-    log_dir = get_current_log_dir()
-    error_tsv_path = log_dir / "unrecognized_SNPs.tsv"
+    # запись нераспознанных SNP
+log_dir = get_current_log_dir()
+error_tsv_path = log_dir / "unrecognized_SNPs.tsv"
 
-    with open(
-        error_tsv_path,
-        "w",
-        newline="",
-        encoding="utf-8"
-    ) as f:
-        writer = csv.writer(
-            f,
-            delimiter="\t",
-            lineterminator="\n"
-        )
-
-        writer.writerow(error_header)
-
-        for line_number, error_info in error_results.items():
-            writer.writerow([
-                *error_info["row"],
-                error_info["reason"],
-            ])
-
-    logger.info(
-        f"Нераспознанные SNP записаны: {error_tsv_path} "
-        f"(строк: {len(error_results)})"
+with open(
+    error_tsv_path,
+    "w",
+    newline="",
+    encoding="utf-8"
+) as f:
+    writer = csv.writer(
+        f,
+        delimiter="\t",
+        lineterminator="\n"
     )
+
+    # основная строка заголовка
+    writer.writerow([
+        "LINE_NUMBER",
+        "ORIGINAL_ROW",
+        "",
+        "",
+        "",
+        "",
+        "REASON",
+    ])
+
+    # подколонки исходной строки
+    writer.writerow([
+        "",
+        "#CHROM",
+        "POS",
+        "ID",
+        "allele1",
+        "allele2",
+        "",
+    ])
+
+    # запись нераспознанных SNP
+    for line_number, error_info in error_results.items():
+        original_row = list(error_info["row"])
+
+        # приводит исходную строку к пяти колонкам
+        original_row = original_row[:5]
+        original_row += [""] * (5 - len(original_row))
+
+        writer.writerow([
+            line_number,
+            *original_row,
+            error_info["reason"],
+        ])
 
 def calculate_statistics(
     recognized_results:dict[int, list],
