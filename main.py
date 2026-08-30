@@ -1,10 +1,9 @@
-import os
 import sys
 import argparse
 import multiprocessing
 
-import datetime
 from tqdm import tqdm
+import threading
 from functools import wraps
 from collections import Counter
 import csv
@@ -138,7 +137,8 @@ def separate_chunks(lines:int, num_processes:int) -> list[tuple[int,int]]:
 
 def run_process_in_chunks(
     chunk_lines:list[str],
-    start_end_chunk:tuple[int, int]
+    start_end_chunk:tuple[int, int],
+    progress_queue=None
     ) -> tuple[dict[int, list], dict[int, dict]]:
     """
     Запускает алгоритм в одном чанке.
@@ -162,7 +162,10 @@ def run_process_in_chunks(
     ]
 
     # Получает распознанные и нераспознанные SNP.
-    return process_chunk(numerated_rows_chunk)
+    return process_chunk(
+        numerated_rows_chunk,
+        progress_queue=progress_queue
+    )
 
 
 def merge_results(
@@ -384,6 +387,28 @@ def create_chunk_rows(
     return rows[start - 1:end]
 
 
+def consume_progress(
+    progress_queue,
+    progress_bar
+) -> None:
+    """
+    Получает сообщения о прогрессе от дочерних процессов
+    и обновляет общий прогресс бар.
+
+    Args:
+        progress_queue: Очередь сообщений от дочерних процессов.
+        progress_bar: Общий прогресс бар tqdm.
+    """
+    while True:
+        value = progress_queue.get()
+
+        # Сигнал завершения работы потребителя
+        if value is None:
+            break
+
+        progress_bar.update(value)
+
+
 @with_logging
 @with_progress
 def main(
@@ -403,28 +428,51 @@ def main(
     Returns:
         dict: Статистика для логов.
     """
-    # Читает входной TSV
+    # подготовка входных данных и разбиение на чанки
     rows = open_tsv_file(input)
-
-    # Определяет количество достпуных процессов
     num_processes = define_number_of_processes()
-
-    # Получает диапазоны чанков в формате 1-based
     chunk_positions = separate_chunks(len(rows), num_processes)
 
-    # Формирует аргументы для каждого процесса
-    process_args = []
+    # подготовка очереди прогресса и аргументов для процессов
+    with multiprocessing.Manager() as manager:
+        progress_queue = manager.Queue()
+        process_args = []
 
-    for chunk_position in chunk_positions:
-        chunk_lines = create_chunk_rows(
-            rows,
-            chunk_position
+        for chunk_position in chunk_positions:
+            chunk_lines = create_chunk_rows(
+                rows,
+                chunk_position
+            )
+
+            process_args.append(
+                (
+                    chunk_lines,
+                    chunk_position,
+                    progress_queue
+                )
+            )
+
+        # запуск отдельного потока для обновления прогресс бара
+        progress_thread = threading.Thread(
+            target=consume_progress,
+            args=(progress_queue, progress_bar)
         )
+        progress_thread.start()
 
-        process_args.append(
-            (chunk_lines, chunk_position)
-        )
+        # параллельная обработка чанков
+        with multiprocessing.Pool(
+            processes=num_processes
+        ) as pool:
+            results = pool.starmap(
+                run_process_in_chunks,
+                process_args
+            )
 
+        # завершение потока прогресс бара
+        progress_queue.put(None)
+        progress_thread.join()
+
+    # параллельная обработка чанков
     with multiprocessing.Pool(
         processes=num_processes
     ) as pool:
@@ -433,7 +481,7 @@ def main(
             process_args
         )
 
-    # Разделяет результаты каждого процесса
+    # разделение результатов процессов
     recognized_results_list = []
     error_results_list = []
 
@@ -441,20 +489,20 @@ def main(
         recognized_results_list.append(recognized_results)
         error_results_list.append(error_results)
 
-    # Объединяет результаты процессов
+    # объединение результатов
     recognized_results, error_results = merge_results(
         recognized_results_list,
         error_results_list
     )
 
-    # Записывает распознанные и нераспознанные SNP
+    # запись результатов в файлы
     write_results_to_file(
         output,
         recognized_results,
         error_results
     )
 
-    # Рассчитывает итоговую статистику
+    # расчёт итоговой статистики
     statistic = calculate_statistics(
         recognized_results,
         error_results
