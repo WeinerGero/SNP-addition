@@ -297,6 +297,17 @@ def calculate_statistics(
     """
     total_snps = len(recognized_results) + len(error_results)
 
+    if total_snps <= 0:
+        logger.error("SNP не было найдено")
+        return {
+                "total_snps": 0,
+                "recognized": 0,
+                "recognized_percent": 0,
+                "unrecognized": 0,
+                "unrecognized_percent": 0,
+                "error_reasons": "SNP не было найдено, проверьте логи."
+            }
+
     recognized_count = len(recognized_results)
     unrecognized_count = len(error_results)
 
