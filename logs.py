@@ -5,7 +5,6 @@ import os
 import datetime
 import logging
 from pathlib import Path
-from typing import Optional
 from functools import wraps
 
 BASE_LOG_DIR = "logs"
@@ -103,7 +102,27 @@ def run_with_logging(func, *args, **kwargs):
     try:
         result = func(*args, **kwargs)
         report_content_lines.append("Статус: Успешно")
-        report_content_lines.append(f"Результат (repr): {repr(result)}")
+        report_content_lines.append("")
+        report_content_lines.append("Статистика обработки SNP")
+        report_content_lines.append(
+            f"Всего SNP: {result['total_snps']}"
+        )
+        report_content_lines.append(
+            f"Распознано: {result['recognized']} "
+            f"({result['recognized_percent']:.2f}%)"
+        )
+        report_content_lines.append(
+            f"Нераспознано: {result['unrecognized']} "
+            f"({result['unrecognized_percent']:.2f}%)"
+        )
+
+        report_content_lines.append("")
+        report_content_lines.append("Причины ошибок")
+
+        for reason, count in result["error_reasons"].items():
+            report_content_lines.append(
+                f"{reason}: {count}"
+            )
     except Exception as e:
         report_content_lines.append("Статус: Ошибка")
         report_content_lines.append(f"Исключение: {type(e).__name__}: {e}")
@@ -135,6 +154,22 @@ def with_logging(func):
 def get_logger() -> logging.Logger:
     """Возвращает активный логгер 'my_app'."""
     return logging.getLogger("my_app")
+
+
+def get_current_log_dir() -> Path:
+    """
+    Возвращает путь к папке логов текущего запуска.
+
+    Returns:
+        Path: Путь к папке текущего запуска.
+    """
+    logger = get_logger()
+
+    for handler in logger.handlers:
+        if isinstance(handler, logging.FileHandler):
+            return Path(handler.baseFilename).parent
+
+    raise RuntimeError("Папка текущего запуска логирования не найдена.")
 
 
 if __name__ == "__main__":
