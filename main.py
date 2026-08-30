@@ -7,6 +7,7 @@ import datetime
 from tqdm import tqdm
 from functools import wraps
 from collections import Counter
+import csv
 
 from logs import with_logging, get_logger
 from algorithm import process_chunk
@@ -51,7 +52,21 @@ def open_tsv_file(input_tsv_path) -> list[str]:
     Returns:
         list[str]: Набор строк, где первая строка - заголовок, а остлаьные SNP
     """
-    pass
+    data = []
+    try:
+        with open(input_tsv_path, newline='', encoding='utf-8') as file:
+            reader = csv.reader(file, delimiter='\t')
+            for row in reader:
+                data.append(row)
+
+    except FileNotFoundError:
+        print("Ошибка: файл не найден.")
+    except csv.Error as e:
+        print(f"Ошибка парсинга TSV-файла: {e}")
+    except UnicodeDecodeError:
+        print("Ошибка декодирования: проверьте кодировку файла.")
+
+    return data
 
 
 def separate_chunks(lines:int, num_process:int) -> list[tuple[int,int]]:
