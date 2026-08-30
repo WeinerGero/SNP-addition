@@ -283,6 +283,7 @@ def _write_results_to_file(
             "",
             "",
             "",
+            "REFERENCE_BASE",
             "REASON",
         ])
 
@@ -294,6 +295,7 @@ def _write_results_to_file(
             "ID",
             "allele1",
             "allele2",
+            "",
             "",
         ])
 
@@ -308,6 +310,7 @@ def _write_results_to_file(
             writer.writerow([
                 line_number,
                 *original_row,
+                error_info["reference_base"],
                 error_info["reason"],
             ])
 
