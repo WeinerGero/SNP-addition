@@ -203,9 +203,9 @@ def process_snp(
     if line_number == 1:
         validate_header(row)
         return None  # Заголовок не обрабатываем дальше
-    else:
-        # Если это не заголовок, проверяем строку SNP
-        validated_row = validate_snp_row(row, line_number)
+
+    # Если это не заголовок, проверяем строку SNP
+    validated_row = validate_snp_row(row, line_number)
 
     # Если строка не прошла валидацию, возвращаем номер строки для пропуска
     if validated_row is None:
@@ -215,6 +215,16 @@ def process_snp(
             "reference_base": None,
             "reason": "Ошибка валидации строки",
         }
+
+    chrom = validated_row[0]
+
+    # открывает референс хромосомы, если его ещё нет в кэше
+    if chrom not in fasta_cache:
+        reference_path = get_reference_path(chrom)
+        fasta_cache[chrom] = open_reference(reference_path)
+
+    # получает уже открытый референсный файл
+    reference_fasta = fasta_cache[chrom]
 
     # Открываем референсный FASTA-файл для нужной хромосомы,
     # если он ещё не открыт
