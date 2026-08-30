@@ -72,12 +72,17 @@ def open_tsv_file(input_tsv_path:str) -> list[str]:
             for row in reader:
                 data.append(row)
 
-    except FileNotFoundError:
-        print("Ошибка: файл не найден.")
+    except FileNotFoundError as e:
+        logger.error(f"Ошибка: файл не найден: {input_tsv_path}. {e}")
+        raise
+
     except csv.Error as e:
-        print(f"Ошибка парсинга TSV-файла: {e}")
-    except UnicodeDecodeError:
-        print("Ошибка декодирования: проверьте кодировку файла.")
+        logger.error(f"Ошибка парсинга TSV-файла: {e}")
+        raise
+
+    except UnicodeDecodeError as e:
+        logger.error(f"Ошибка декодирования: {e}")
+        raise
 
     return data
 
